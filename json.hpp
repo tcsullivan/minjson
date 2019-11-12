@@ -19,8 +19,8 @@
 
 #include <cctype>
 #include <optional>
-#include <pair>
 #include <string_view>
+#include <tuple>
 
 namespace json
 {
@@ -108,7 +108,7 @@ namespace json
 
                 } else if (isdigit(c)) {
                     while (isdigit(body[++valueStart]) || body[valueStart] == '.');
-                    return {type::number, valueStart};
+                    return {{type::number, valueStart}};
                 } else if (c == '{') {
 
                 } else if (c == '[') {
@@ -116,11 +116,11 @@ namespace json
                 } else {
                     // Boolean or null
                     if (body.compare(valueStart, 4, "true") == 0)
-                        return {type::boolean, valueStart + 4};
+                        return {{type::boolean, valueStart + 4}};
                     else if (body.compare(valueStart, 5, "false") == 0)
-                        return {type::boolean, valueStart + 5};
+                        return {{type::boolean, valueStart + 5}};
                     else if (body.compare(valueStart, 4, "null") == 0)
-                        return {type::null, valueStart + 4};
+                        return {{type::null, valueStart + 4}};
                     else
                         return {};
                 }

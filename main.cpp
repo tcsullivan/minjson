@@ -4,8 +4,16 @@
 
 static const char *testJson = R"(
 {
-    "name": "Clyne",
-    "favorite": 42
+    "ID": "SGML",
+    "SortAs": "SGML",
+    "GlossTerm": "Standard Generalized Markup Language",
+    "Acronym": "SGML",
+    "Abbrev": "ISO 8879:1986",
+    "GlossDef": {
+        "para": "A meta-markup language, used to create markup languages such as DocBook.",
+    	"GlossSeeAlso": ["GML", "XML"]
+    },
+    "GlossSee": "markup"
 }
 )";
 
@@ -18,7 +26,7 @@ int main(void)
         auto object = test.getNextObject();
         if (!object)
             break;
-        std::cout << object->name << std::endl;
+        std::cout << object->name << ": " << object->value << std::endl;
     }
 
     return 0;

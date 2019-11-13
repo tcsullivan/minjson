@@ -38,7 +38,7 @@ namespace json
     {
         std::string_view name;
         json::type type;
-        std::size_t valueIndex;
+        std::string_view value;
     };
     
     class parser
@@ -94,8 +94,8 @@ namespace json
                         if (!pair)
                             return {};
                         o.type = pair->first;
-                        o.valueIndex = valueStart + 1;
-
+                        o.value = body.substr(valueStart + 2,
+                                              pair->second - valueStart - 2);
                         index = body.find_first_not_of(" \t\n\r", pair->second);
                         if (index == npos || body[index] != ',')
                             ready = false;

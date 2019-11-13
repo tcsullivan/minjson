@@ -90,6 +90,10 @@ namespace json
                         object o;
                         o.name = body.substr(nameStart + 1,
                                              nameEnd - nameStart - 1);
+                        auto pair = determineType(valueStart + 1);
+                        if (!pair)
+                            return {};
+                        o.type = pair->first;
                         o.valueIndex = valueStart + 1;
                         return o;
                     }
@@ -105,14 +109,40 @@ namespace json
             if (valueStart != npos) {
                 char c = body[valueStart];
                 if (c == '\"') {
-
-                } else if (isdigit(c)) {
+                    for (valueStart++;
+                         valueStart < body.size() &&
+                         (body[valueStart] != '\"' || body[valueStart - 1] == '\\');
+                         valueStart++);
+                    if (valueStart >= body.size())
+                        return {};
+                    return {{type::string, valueStart + 1}};
+                } else if (c == '-' || isdigit(c)) {
                     while (isdigit(body[++valueStart]) || body[valueStart] == '.');
                     return {{type::number, valueStart}};
                 } else if (c == '{') {
-
+                    valueStart++;
+                    int b;
+                    for (b = 0; valueStart < body.size() && b >= 0; valueStart++) {
+                        if (body[valueStart] == '{')
+                            b++;
+                        else if (body[valueStart] == '}')
+                            b--;
+                    }
+                    if (b != -1)
+                        return {};
+                    return {{type::object, valueStart}};
                 } else if (c == '[') {
-
+                    valueStart++;
+                    int b;
+                    for (b = 0; valueStart < body.size() && b >= 0; valueStart++) {
+                        if (body[valueStart] == '[')
+                            b++;
+                        else if (body[valueStart] == ']')
+                            b--;
+                    }
+                    if (b != -1)
+                        return {};
+                    return {{type::array, valueStart}};
                 } else {
                     // Boolean or null
                     if (body.compare(valueStart, 4, "true") == 0)
@@ -121,10 +151,10 @@ namespace json
                         return {{type::boolean, valueStart + 5}};
                     else if (body.compare(valueStart, 4, "null") == 0)
                         return {{type::null, valueStart + 4}};
-                    else
-                        return {};
                 }
             }
+
+            return {};
         }
     };
 }

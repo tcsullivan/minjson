@@ -4,7 +4,8 @@
 
 static const char *testJson = R"(
 {
-    "name": "Clyne"
+    "name": "Clyne",
+    "favorite": 42
 }
 )";
 
@@ -13,9 +14,12 @@ int main(void)
     json::parser test;
     test.start(testJson);
 
-    auto object = test.getNextObject();
-
-    std::cout << (object ? object->name : "bad!") << std::endl;
+    while (test.isReady()) {
+        auto object = test.getNextObject();
+        if (!object)
+            break;
+        std::cout << object->name << std::endl;
+    }
 
     return 0;
 }

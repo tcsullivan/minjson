@@ -95,6 +95,11 @@ namespace json
                             return {};
                         o.type = pair->first;
                         o.valueIndex = valueStart + 1;
+
+                        index = body.find_first_not_of(" \t\n\r", pair->second);
+                        if (index == npos || body[index] != ',')
+                            ready = false;
+
                         return o;
                     }
                 }
@@ -105,6 +110,7 @@ namespace json
 
         std::optional<std::pair<type, std::size_t>> determineType(std::size_t i)
         {
+            std::pair<type, std::size_t> result;
             auto valueStart = body.find_first_not_of(" \t\r\n", i);
             if (valueStart != npos) {
                 char c = body[valueStart];
@@ -115,10 +121,10 @@ namespace json
                          valueStart++);
                     if (valueStart >= body.size())
                         return {};
-                    return {{type::string, valueStart + 1}};
+                    result = {type::string, valueStart + 1};
                 } else if (c == '-' || isdigit(c)) {
                     while (isdigit(body[++valueStart]) || body[valueStart] == '.');
-                    return {{type::number, valueStart}};
+                    return result = {type::number, valueStart};
                 } else if (c == '{') {
                     valueStart++;
                     int b;
@@ -130,7 +136,7 @@ namespace json
                     }
                     if (b != -1)
                         return {};
-                    return {{type::object, valueStart}};
+                    result = {type::object, valueStart};
                 } else if (c == '[') {
                     valueStart++;
                     int b;
@@ -142,19 +148,21 @@ namespace json
                     }
                     if (b != -1)
                         return {};
-                    return {{type::array, valueStart}};
+                    result = {type::array, valueStart};
                 } else {
                     // Boolean or null
                     if (body.compare(valueStart, 4, "true") == 0)
-                        return {{type::boolean, valueStart + 4}};
+                        result = {type::boolean, valueStart + 4};
                     else if (body.compare(valueStart, 5, "false") == 0)
-                        return {{type::boolean, valueStart + 5}};
+                        result = {type::boolean, valueStart + 5};
                     else if (body.compare(valueStart, 4, "null") == 0)
-                        return {{type::null, valueStart + 4}};
+                        result = {type::null, valueStart + 4};
+                    else
+                        return {};
                 }
             }
 
-            return {};
+            return result;
         }
     };
 }

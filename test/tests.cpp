@@ -4,6 +4,13 @@
 #include "json.hpp"
 
 const char *goodJson = R"( { "name": "Clyne" })";
+const char *goodLongerJson = R"(
+{
+    "title": "Engineer",
+    "salary": 80000.00,
+    "additionalInfo": null
+}
+)";
 const char *missingBeginningJson = R"( "name": "Clyne" })";
 const char *missingEndJson = R"( { "name": "Clyne" )";
 
@@ -71,5 +78,27 @@ TEST_CASE("json::parser::determineType")
     goodTest(goodNullValue,     13, {json::type::null, 18});
     badTest(badStringValue, 10);
     badTest(badValue, 12);
+}
+
+TEST_CASE("json::parser::getNextObject")
+{
+    json::parser test;
+
+    REQUIRE(!test.getNextObject());
+
+    test.start(goodLongerJson);
+    auto object = test.getNextObject();
+    REQUIRE(object);
+    REQUIRE(object->name == "title");
+    REQUIRE(object->type == json::type::string);
+    object = test.getNextObject();
+    REQUIRE(object);
+    REQUIRE(object->name == "salary");
+    REQUIRE(object->type == json::type::number);
+    object = test.getNextObject();
+    REQUIRE(object);
+    REQUIRE(object->name == "additionalInfo");
+    REQUIRE(object->type == json::type::null);
+    REQUIRE(!test.getNextObject());
 }
 

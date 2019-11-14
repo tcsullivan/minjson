@@ -27,6 +27,10 @@ int main(void)
         if (!object)
             break;
         std::cout << object->name << ": " << object->value << std::endl;
+        std::cout << object->name << ": ";
+        if (object->type == json::type::string)
+            std::cout << object->getString();
+        std::cout << std::endl;
     }
 
     return 0;

@@ -39,6 +39,13 @@ namespace json
         std::string_view name;
         json::type type;
         std::string_view value;
+
+        std::string_view getString(void) const
+        {
+            if (type != type::string)
+                return "";
+            return value.substr(1, value.size() - 2);
+        }
     };
     
     class parser

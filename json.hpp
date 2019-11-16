@@ -46,6 +46,40 @@ namespace json
                 return "";
             return value.substr(1, value.size() - 2);
         }
+
+        bool getBoolean(void) const
+        {
+            if (type != type::boolean)
+                return false;
+            return value == "true";
+        }
+
+        template<typename T>
+        T getNumber(void) const
+        {
+            if (type != type::number)
+                return 0;
+
+            T n = 0;
+            bool decimal = false;
+            int decimalCount = 0;
+            for (auto it = value.begin(); it != value.end(); it++) {
+                if (isdigit(*it)) {
+                    n = n * 10 + (*it - '0');
+                    if (decimal)
+                        decimalCount++;
+                } else if (*it == '.') {
+                    if constexpr (std::is_floating_point<T>::value)
+                        decimal = true;
+                    else
+                        break;
+                }
+            }
+
+            for (; decimalCount > 0; decimalCount--)
+                n /= 10;
+            return n;
+        }
     };
     
     class parser

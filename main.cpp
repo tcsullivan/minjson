@@ -8,12 +8,12 @@ static const char *testJson = R"(
     "SortAs": "SGML",
     "GlossTerm": "Standard Generalized Markup Language",
     "Acronym": "SGML",
-    "Abbrev": "ISO 8879:1986",
+    "Abbrev": 887.9,
     "GlossDef": {
         "para": "A meta-markup language, used to create markup languages such as DocBook.",
     	"GlossSeeAlso": ["GML", "XML"]
     },
-    "GlossSee": "markup"
+    "GlossSee": false
 }
 )";
 
@@ -26,11 +26,20 @@ int main(void)
         auto object = test.getNextObject();
         if (!object)
             break;
-        std::cout << object->name << ": " << object->value << std::endl;
-        std::cout << object->name << ": ";
-        if (object->type == json::type::string)
-            std::cout << object->getString();
-        std::cout << std::endl;
+        switch (object->type) {
+        case json::type::string:
+            std::cout << object->name << ": " << object->getString() << std::endl;
+            break;
+        case json::type::number:
+            std::cout << object->name << ": " << object->getNumber<float>() << std::endl;
+            break;
+        case json::type::boolean:
+            std::cout << object->name << ": " << (object->getBoolean() ? "true" : "false") << std::endl;
+            break;
+        default:
+            std::cout << object->name << "? " << object->value << std::endl;
+            break;
+        }
     }
 
     return 0;

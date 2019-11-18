@@ -2,25 +2,66 @@
 
 #include <iostream>
 
-static const char *testJson = R"(
-{
-    "ID": "SGML",
-    "SortAs": "SGML",
-    "GlossTerm": "Standard Generalized Markup Language",
-    "Acronym": "SGML",
-    "Abbrev": 887.9,
-    "GlossDef": {
-        "para": "A meta-markup language, used to create markup languages such as DocBook.",
-    	"GlossSeeAlso": ["GML", "XML"]
-    },
-    "GlossSee": false
-}
-)";
+static const char *testJson = R"json(
+{"menu": {
+    "header": "SVG Viewer",
+    "items": [
+        {"id": "Open"},
+        {"id": "OpenNew", "label": "Open New"},
+        null,
+        {"id": "ZoomIn", "label": "Zoom In"},
+        {"id": "ZoomOut", "label": "Zoom Out"},
+        {"id": "OriginalView", "label": "Original View"},
+        null,
+        {"id": "Quality"},
+        {"id": "Pause"},
+        {"id": "Mute"},
+        null,
+        {"id": "Find", "label": "Find..."},
+        {"id": "FindAgain", "label": "Find Again"},
+        {"id": "Copy"},
+        {"id": "CopyAgain", "label": "Copy Again"},
+        {"id": "CopySVG", "label": "Copy SVG"},
+        {"id": "ViewSVG", "label": "View SVG"},
+        {"id": "ViewSource", "label": "View Source"},
+        {"id": "SaveAs", "label": "Save As"},
+        null,
+        {"id": "Help"},
+        {"id": "About", "label": "About Adobe CVG Viewer..."}
+    ]
+}}
+)json";
 
-void iterateArray(json::object array)
+void iterateParser(json::parser test);
+
+void iterateArray(json::objectbase array)
 {
-    for (auto iter = array.getArrayFirst(); iter.isValid(); iter.nextObject())
-        std::cout << iter.value << '|' << std::endl;
+    for (auto iter = array.getArrayFirst(); iter.isValid(); iter.nextObject()) {
+        switch (iter.type) {
+        case json::type::string:
+            std::cout << ": " << iter.getString() << std::endl;
+            break;
+        case json::type::number:
+            std::cout << ": " << iter.getNumber<float>() << std::endl;
+            break;
+        case json::type::boolean:
+            std::cout << ": " << (iter.getBoolean() ? "true" : "false") << std::endl;
+            break;
+        case json::type::object:
+            std::cout << ": " << std::endl << "--------" << std::endl;
+            iterateParser(iter.getObject());
+            std::cout << "--------" << std::endl;
+            break;
+        case json::type::array:
+            std::cout << ": " << std::endl << "========" << std::endl;
+            iterateArray(iter);
+            std::cout << "========" << std::endl;
+            break;
+        default:
+            std::cout << "? " << iter.value << std::endl;
+            break;
+        }
+    }
 }
 
 void iterateParser(json::parser test)

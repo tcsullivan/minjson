@@ -42,14 +42,17 @@ namespace json
         json::type type;
         std::string_view value;
 
-        std::string_view getString(void) const
+        constexpr objectbase(void)
+            : type(type::null) {}
+
+        constexpr std::string_view getString(void) const
         {
             if (type != type::string)
                 return "";
             return value.substr(1, value.size() - 2);
         }
 
-        bool getBoolean(void) const
+        constexpr bool getBoolean(void) const
         {
             if (type != type::boolean)
                 return false;
@@ -57,7 +60,7 @@ namespace json
         }
 
         template<typename T>
-        T getNumber(void) const
+        constexpr T getNumber(void) const
         {
             if (type != type::number)
                 return 0;
@@ -83,8 +86,8 @@ namespace json
             return n;
         }
 
-        parser getObject(void) const;
-        arrayobject getArrayFirst(void) const;
+        constexpr parser getObject(void) const;
+        constexpr arrayobject getArrayFirst(void) const;
     };
 
     struct arrayobject : public objectbase
@@ -97,18 +100,24 @@ namespace json
         std::size_t index;
         bool valid;
 
-        arrayobject(std::string_view _whole)
-            : whole(_whole), index(0)
+        constexpr arrayobject(std::string_view _whole)
+            : whole(_whole), index(0), valid(false)
         {
             nextObject();
         }
 
-        bool isValid(void) const
+        constexpr bool isValid(void) const
         {
             return valid;
         }
 
-        arrayobject& nextObject(void);
+        constexpr void rewind(void)
+        {
+            index = 0;
+            nextObject();
+        }
+
+        constexpr arrayobject& nextObject(void);
     };
 
     struct object : public objectbase
@@ -120,16 +129,16 @@ namespace json
     {
     private:
         bool ready;
-        std::string_view body;
         std::size_t index;
+        std::string_view body;
 
         constexpr static auto npos = std::string_view::npos;
     
     public:
-        explicit parser(void)
-            : ready(false) {}
+        constexpr parser(void)
+            : ready(false), index(0) {}
     
-        bool start(std::string_view s) {
+        constexpr bool start(std::string_view s) {
             auto from = s.find_first_not_of(" \t\r\n");
             if (from != npos && s[from] == '{') {
                 auto to = s.find_last_not_of(" \t\r\n");
@@ -147,11 +156,18 @@ namespace json
             return ready;
         }
         
-        bool isReady(void) const {
+        constexpr bool isReady(void) const
+        {
             return ready;
         }
 
-        std::optional<object> getNextObject(void) {
+        constexpr void rewind(void)
+        {
+            index = 0;
+            ready = true;
+        }
+
+        constexpr std::optional<object> getNextObject(void) {
             if (!ready)
                 return {};
 
@@ -183,7 +199,7 @@ namespace json
             return {};
         }
 
-        static std::optional<std::pair<type, std::size_t>> determineType(std::string_view val)
+        constexpr static std::optional<std::pair<type, std::size_t>> determineType(std::string_view val)
         {
             std::pair<type, std::size_t> result;
             auto valueStart = val.find_first_not_of(" \t\r\n");
@@ -202,8 +218,8 @@ namespace json
                     return result = {type::number, valueStart};
                 } else if (c == '{') {
                     valueStart++;
-                    int b;
-                    for (b = 0; valueStart < val.size() && b >= 0; valueStart++) {
+                    int b = 0;
+                    for (; valueStart < val.size() && b >= 0; valueStart++) {
                         if (val[valueStart] == '{')
                             b++;
                         else if (val[valueStart] == '}')
@@ -214,8 +230,8 @@ namespace json
                     result = {type::object, valueStart};
                 } else if (c == '[') {
                     valueStart++;
-                    int b;
-                    for (b = 0; valueStart < val.size() && b >= 0; valueStart++) {
+                    int b = 0;
+                    for (; valueStart < val.size() && b >= 0; valueStart++) {
                         if (val[valueStart] == '[')
                             b++;
                         else if (val[valueStart] == ']')
@@ -241,7 +257,7 @@ namespace json
         }
     };
 
-    parser objectbase::getObject(void) const
+    constexpr parser objectbase::getObject(void) const
     {
         parser p;
         if (type == type::object)
@@ -249,22 +265,23 @@ namespace json
         return p;
     }
 
-    arrayobject objectbase::getArrayFirst(void) const
+    constexpr arrayobject objectbase::getArrayFirst(void) const
     {
         return arrayobject(value.substr(1));
     }
 
-    arrayobject& arrayobject::nextObject(void)
+    constexpr arrayobject& arrayobject::nextObject(void)
     {
         if (index == npos) {
             valid = false;
         } else if (auto pair = parser::determineType(whole.substr(index)); pair) {
-            std::size_t next;
+            std::size_t next = 0;
             std::tie(type, next) = *pair;
             value = whole.substr(index, next);
             index = whole.find_first_not_of(" \t\n\r", index + next + 1);
             if (index != npos && whole[index] == ']')
                 index = npos;
+            valid = true;
         } else {
             valid = false;
         }

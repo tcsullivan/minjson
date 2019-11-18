@@ -34,6 +34,8 @@ namespace json
         null
     };
 
+    class parser;
+
     struct object
     {
         std::string_view name;
@@ -80,6 +82,8 @@ namespace json
                 n /= 10;
             return n;
         }
+
+        parser getObject(void) const;
     };
     
     class parser
@@ -206,6 +210,14 @@ namespace json
             return result;
         }
     };
+
+    parser object::getObject(void) const
+    {
+        parser p;
+        if (type == type::object)
+            p.start(value);
+        return p;
+    }
 }
 
 #endif // JSON_HPP_

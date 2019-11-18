@@ -17,11 +17,8 @@ static const char *testJson = R"(
 }
 )";
 
-int main(void)
+void iterateParser(json::parser test)
 {
-    json::parser test;
-    test.start(testJson);
-
     while (test.isReady()) {
         auto object = test.getNextObject();
         if (!object)
@@ -36,12 +33,23 @@ int main(void)
         case json::type::boolean:
             std::cout << object->name << ": " << (object->getBoolean() ? "true" : "false") << std::endl;
             break;
+        case json::type::object:
+            std::cout << object->name << ": " << std::endl << "--------" << std::endl;
+            iterateParser(object->getObject());
+            std::cout << "--------" << std::endl;
+            break;
         default:
             std::cout << object->name << "? " << object->value << std::endl;
             break;
         }
     }
+}
 
+int main(void)
+{
+    json::parser test;
+    test.start(testJson);
+    iterateParser(test);
     return 0;
 }
 

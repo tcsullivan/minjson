@@ -17,6 +17,12 @@ static const char *testJson = R"(
 }
 )";
 
+void iterateArray(json::object array)
+{
+    for (auto iter = array.getArrayFirst(); iter.isValid(); iter.nextObject())
+        std::cout << iter.value << '|' << std::endl;
+}
+
 void iterateParser(json::parser test)
 {
     while (test.isReady()) {
@@ -37,6 +43,11 @@ void iterateParser(json::parser test)
             std::cout << object->name << ": " << std::endl << "--------" << std::endl;
             iterateParser(object->getObject());
             std::cout << "--------" << std::endl;
+            break;
+        case json::type::array:
+            std::cout << object->name << ": " << std::endl << "========" << std::endl;
+            iterateArray(*object);
+            std::cout << "========" << std::endl;
             break;
         default:
             std::cout << object->name << "? " << object->value << std::endl;

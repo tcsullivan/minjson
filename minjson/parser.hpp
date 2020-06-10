@@ -1,141 +1,16 @@
-/**
- * Copyright (C) 2019 Clyne Sullivan
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-#ifndef JSON_HPP_
-#define JSON_HPP_
+#ifndef MINJSON_PARSER_HPP_
+#define MINJSON_PARSER_HPP_
+
+#include "type.hpp"
+#include "object.hpp"
 
 #include <cctype>
 #include <optional>
 #include <string_view>
 #include <tuple>
 
-namespace json
+namespace minjson
 {
-    template<typename T>
-    concept numeric = !std::is_same_v<T, bool> and std::is_arithmetic_v<T>;
-
-    /**
-     * Enumerates the different possible types of 'objects' within JSON.
-     */
-    enum class type
-    {
-        string,
-        number,
-        object,
-        array,
-        boolean,
-        null
-    };
-
-    class parser;
-    struct arrayobject;
-
-    /**
-     * Defines the base for a JSON object, specifying the object's type and value as a string.
-     */
-    struct objectbase
-    {
-        json::type type;
-        std::string_view value;
-
-        constexpr objectbase() : type(type::null) {}
-
-        template<typename T>
-        constexpr std::optional<std::enable_if_t<!numeric<T>, T>> get() const {
-            return {};
-        }
-
-        template<typename T>
-        constexpr std::optional<std::enable_if_t<numeric<T>, T>> get() const {
-            T n = 0;
-            bool decimal = false;
-            int decimalCount = 0;
-            for (auto it = value.begin(); it != value.end(); it++) {
-                if (isdigit(*it)) {
-                    n = n * 10 + (*it - '0');
-                    if (decimal)
-                        decimalCount++;
-                } else if (*it == '.') {
-                    if (std::is_floating_point_v<T>)
-                        decimal = true;
-                    else
-                        break; // Better than failing
-                }
-            }
-
-            for (; decimalCount > 0; decimalCount--)
-                n /= 10;
-            return n;
-        }
-
-        template<>
-        constexpr std::optional<std::string_view> get<std::string_view>() const {
-            if (type == type::string)
-                return value.substr(1, value.size() - 2);
-            else
-                return {};
-        }
-
-        template<>
-        constexpr std::optional<bool> get<bool>() const {
-            if (type == type::boolean)
-               return value == "true";
-            else
-                return {};
-        }
-
-        constexpr parser getObject() const;
-        constexpr arrayobject getArrayFirst() const;
-    };
-
-    struct arrayobject : public objectbase
-    {
-    private:
-        constexpr static auto npos = std::string_view::npos;
-
-    public:
-        std::string_view whole;
-        std::size_t index;
-        bool valid;
-
-        constexpr arrayobject(std::string_view _whole)
-            : whole(_whole), index(0), valid(false)
-        {
-            nextObject();
-        }
-
-        constexpr bool isValid(void) const
-        {
-            return valid;
-        }
-
-        constexpr void rewind(void)
-        {
-            index = 0;
-            nextObject();
-        }
-
-        constexpr arrayobject& nextObject(void);
-    };
-
-    struct object : public objectbase
-    {
-        std::string_view name;
-    };
-    
     class parser
     {
     private:
@@ -267,39 +142,7 @@ namespace json
             return result;
         }
     };
-
-    constexpr parser objectbase::getObject(void) const
-    {
-        parser p;
-        if (type == type::object)
-            p.start(value);
-        return p;
-    }
-
-    constexpr arrayobject objectbase::getArrayFirst(void) const
-    {
-        return arrayobject(value.substr(1));
-    }
-
-    constexpr arrayobject& arrayobject::nextObject(void)
-    {
-        if (index == npos) {
-            valid = false;
-        } else if (auto pair = parser::determineType(whole.substr(index)); pair) {
-            std::size_t next = 0;
-            std::tie(type, next) = *pair;
-            value = whole.substr(index, next);
-            index = whole.find_first_not_of(" \t\n\r", index + next + 1);
-            if (index != npos && whole[index] == ']')
-                index = npos;
-            valid = true;
-        } else {
-            valid = false;
-        }
-
-        return *this;
-    }
 }
 
-#endif // JSON_HPP_
+#endif // MINJSON_PARSER_HPP_
 

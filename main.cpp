@@ -32,6 +32,8 @@ static const char *testJson = R"json(
 }}
 )json";
 
+#define json minjson
+
 void iterateParser(json::parser test);
 
 void iterateArray(json::objectbase array)

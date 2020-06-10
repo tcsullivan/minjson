@@ -24,6 +24,12 @@
 
 namespace json
 {
+    template<typename T>
+    concept numeric = !std::is_same_v<T, bool> and std::is_arithmetic_v<T>;
+
+    /**
+     * Enumerates the different possible types of 'objects' within JSON.
+     */
     enum class type
     {
         string,
@@ -35,36 +41,25 @@ namespace json
     };
 
     class parser;
-    class arrayobject;
+    struct arrayobject;
 
+    /**
+     * Defines the base for a JSON object, specifying the object's type and value as a string.
+     */
     struct objectbase
     {
         json::type type;
         std::string_view value;
 
-        constexpr objectbase(void)
-            : type(type::null) {}
+        constexpr objectbase() : type(type::null) {}
 
-        constexpr std::string_view getString(void) const
-        {
-            if (type != type::string)
-                return "";
-            return value.substr(1, value.size() - 2);
-        }
-
-        constexpr bool getBoolean(void) const
-        {
-            if (type != type::boolean)
-                return false;
-            return value == "true";
+        template<typename T>
+        constexpr std::optional<std::enable_if_t<!numeric<T>, T>> get() const {
+            return {};
         }
 
         template<typename T>
-        constexpr T getNumber(void) const
-        {
-            if (type != type::number)
-                return 0;
-
+        constexpr std::optional<std::enable_if_t<numeric<T>, T>> get() const {
             T n = 0;
             bool decimal = false;
             int decimalCount = 0;
@@ -74,10 +69,10 @@ namespace json
                     if (decimal)
                         decimalCount++;
                 } else if (*it == '.') {
-                    if constexpr (std::is_floating_point<T>::value)
+                    if (std::is_floating_point_v<T>)
                         decimal = true;
                     else
-                        break;
+                        break; // Better than failing
                 }
             }
 
@@ -86,8 +81,24 @@ namespace json
             return n;
         }
 
-        constexpr parser getObject(void) const;
-        constexpr arrayobject getArrayFirst(void) const;
+        template<>
+        constexpr std::optional<std::string_view> get<std::string_view>() const {
+            if (type == type::string)
+                return value.substr(1, value.size() - 2);
+            else
+                return {};
+        }
+
+        template<>
+        constexpr std::optional<bool> get<bool>() const {
+            if (type == type::boolean)
+               return value == "true";
+            else
+                return {};
+        }
+
+        constexpr parser getObject() const;
+        constexpr arrayobject getArrayFirst() const;
     };
 
     struct arrayobject : public objectbase

@@ -1,5 +1,5 @@
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -Werror -ggdb
+CXX = clang++-10
+CXXFLAGS = -std=c++20 -Wall -Wextra -pedantic -Werror -ggdb -ferror-limit=2
 
 all: json.hpp main.cpp
 	@echo "  CXX   main.cpp"

@@ -1,3 +1,19 @@
+/**
+ * Copyright (C) 2020 Clyne Sullivan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 #ifndef MINJSON_OBJECTBASE_HPP_
 #define MINJSON_OBJECTBASE_HPP_
 
@@ -10,6 +26,10 @@
 
 namespace minjson
 {
+    /**
+     * A numeric concept, for specializing objectbase::get for integers/floating-
+     * points (and not bools).
+     */
     template<typename T>
     concept numeric = !std::is_same_v<T, bool> and std::is_arithmetic_v<T>;
 
@@ -26,22 +46,28 @@ namespace minjson
 
         constexpr objectbase() : type(type::null) {}
 
+        /**
+         * Default get() for reading the object's data. Returns nothing.
+         */
         template<typename T>
         constexpr std::optional<std::enable_if_t<!numeric<T>, T>> get() const {
             return {};
         }
 
+        /**
+         * get() for number data, accepting both integers and floating-points.
+         */
         template<typename T>
         constexpr std::optional<std::enable_if_t<numeric<T>, T>> get() const {
             T n = 0;
             bool decimal = false;
             int decimalCount = 0;
-            for (auto it = value.begin(); it != value.end(); it++) {
-                if (isdigit(*it)) {
-                    n = n * 10 + (*it - '0');
+            for (auto c : value) {
+                if (isdigit(c)) {
+                    n = n * 10 + (c - '0');
                     if (decimal)
                         decimalCount++;
-                } else if (*it == '.') {
+                } else if (c == '.') {
                     if (std::is_floating_point_v<T>)
                         decimal = true;
                     else
@@ -54,6 +80,9 @@ namespace minjson
             return n;
         }
 
+        /**
+         *  get() for string data. Trims off the quotes surrounding the string.
+         */
         template<>
         constexpr std::optional<std::string_view> get<std::string_view>() const {
             if (type == type::string)
@@ -62,6 +91,9 @@ namespace minjson
                 return {};
         }
 
+        /**
+         * get() for bool data.
+         */
         template<>
         constexpr std::optional<bool> get<bool>() const {
             if (type == type::boolean)
@@ -70,8 +102,17 @@ namespace minjson
                 return {};
         }
 
-        constexpr parser getObject() const;
-        constexpr arrayobject getArrayFirst() const;
+        /**
+         * Returns a parser initialized with this object's data, should it have
+         * the object type.
+         */
+        constexpr std::optional<parser> getObject() const;
+
+        /**
+         * Gets an arrayobject for the first entry in this object's array,
+         * should this object be an array.
+         */
+        constexpr std::optional<arrayobject> getArrayFirst() const;
     };
 }
 
@@ -80,17 +121,23 @@ namespace minjson
 
 namespace minjson
 {
-    constexpr parser objectbase::getObject(void) const
+    constexpr std::optional<parser> objectbase::getObject() const
     {
-        parser p;
-        if (type == type::object)
+        if (type == type::object) {
+            parser p;
             p.start(value);
-        return p;
+            return p;
+        } else {
+            return {};
+        }
     }
 
-    constexpr arrayobject objectbase::getArrayFirst(void) const
+    constexpr std::optional<arrayobject> objectbase::getArrayFirst() const
     {
-        return arrayobject(value.substr(1));
+        if (type == type::array)
+            return arrayobject(value.substr(1));
+        else
+            return {};
     }
 }
 

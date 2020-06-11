@@ -38,7 +38,7 @@ void iterateParser(json::parser test);
 
 void iterateArray(json::objectbase array)
 {
-    for (auto iter = array.getArrayFirst(); iter.isValid(); iter.nextObject()) {
+    for (auto iter = *array.getArrayFirst(); iter.isValid(); iter.nextObject()) {
         switch (iter.type) {
         case json::type::string:
             std::cout << "string: " << *iter.get<std::string_view>() << std::endl;
@@ -51,7 +51,7 @@ void iterateArray(json::objectbase array)
             break;
         case json::type::object:
             std::cout << "object: " << std::endl;
-            iterateParser(iter.getObject());
+            iterateParser(*iter.getObject());
             break;
         case json::type::array:
             std::cout << "array: " << std::endl;
@@ -82,7 +82,7 @@ void iterateParser(json::parser test)
             break;
         case json::type::object:
             std::cout << object->name << ": " << std::endl;
-            iterateParser(object->getObject());
+            iterateParser(*object->getObject());
             break;
         case json::type::array:
             std::cout << object->name << ": " << std::endl;

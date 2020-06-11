@@ -34,17 +34,25 @@ namespace minjson
     concept numeric = !std::is_same_v<T, bool> and std::is_arithmetic_v<T>;
 
     class parser;
-    struct arrayobject;
+    class arrayobject;
 
     /**
      * Defines the base for a JSON object, specifying the object's type and value as a string.
      */
-    struct objectbase
+    class objectbase
     {
-        minjson::type type;
-        std::string_view value;
+    protected:
+        minjson::type m_type;
+        std::string_view m_value;
 
-        constexpr objectbase() : type(type::null) {}
+    public:
+        constexpr objectbase(minjson::type type = minjson::type::null,
+                             std::string_view value = {}) :
+            m_type(type), m_value(value) {}
+
+        constexpr minjson::type type() const {
+            return m_type;
+        }
 
         /**
          * Default get() for reading the object's data. Returns nothing.
@@ -59,10 +67,13 @@ namespace minjson
          */
         template<typename T>
         constexpr std::optional<std::enable_if_t<numeric<T>, T>> get() const {
+            if (m_type != type::number)
+                return {};
+
             T n = 0;
             bool decimal = false;
             int decimalCount = 0;
-            for (auto c : value) {
+            for (auto c : m_value) {
                 if (isdigit(c)) {
                     n = n * 10 + (c - '0');
                     if (decimal)
@@ -85,8 +96,8 @@ namespace minjson
          */
         template<>
         constexpr std::optional<std::string_view> get<std::string_view>() const {
-            if (type == type::string)
-                return value.substr(1, value.size() - 2);
+            if (m_type == type::string)
+                return m_value.substr(1, m_value.size() - 2);
             else
                 return {};
         }
@@ -96,8 +107,8 @@ namespace minjson
          */
         template<>
         constexpr std::optional<bool> get<bool>() const {
-            if (type == type::boolean)
-               return value == "true";
+            if (m_type == type::boolean)
+               return m_value == "true";
             else
                 return {};
         }
@@ -123,9 +134,9 @@ namespace minjson
 {
     constexpr std::optional<parser> objectbase::getObject() const
     {
-        if (type == type::object) {
+        if (m_type == type::object) {
             parser p;
-            p.start(value);
+            p.start(m_value);
             return p;
         } else {
             return {};
@@ -134,8 +145,8 @@ namespace minjson
 
     constexpr std::optional<arrayobject> objectbase::getArrayFirst() const
     {
-        if (type == type::array)
-            return arrayobject(value.substr(1));
+        if (m_type == type::array)
+            return arrayobject(m_value.substr(1));
         else
             return {};
     }

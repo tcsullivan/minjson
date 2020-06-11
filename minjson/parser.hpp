@@ -33,14 +33,14 @@ namespace minjson
     class parser
     {
     private:
-        bool ready; // Set 'true' if data is available
-        std::size_t index; // Index within the JSON data
-        std::string_view body; // Contains the 'body' of the JSON data
+        bool m_ready; // Set 'true' if data is available
+        std::size_t m_index; // Index within the JSON data
+        std::string_view m_body; // Contains the 'body' of the JSON data
 
         constexpr static auto npos = std::string_view::npos;
     
     public:
-        constexpr parser() : ready(false), index(0) {}
+        constexpr parser() : m_ready(false), m_index(0) {}
     
         /**
          * Starts the parser with a given string of JSON data.
@@ -52,65 +52,65 @@ namespace minjson
             if (from != npos && jstr[from] == '{') {
                 auto to = jstr.find_last_not_of(" \t\r\n");
 
-                ready = to != npos && jstr[to] == '}';
-                if (ready) {
-                    index = 0;
-                    body = jstr.substr(from + 1, to - from - 1);
+                m_ready = to != npos && jstr[to] == '}';
+                if (m_ready) {
+                    m_index = 0;
+                    m_body = jstr.substr(from + 1, to - from - 1);
                 }
             } else {
-                ready = false;
+                m_ready = false;
             }
     
-            return ready;
+            return m_ready;
         }
         
         /**
          * Tells if the parser is 'ready'; that is, data is available.
          */
-        constexpr bool isReady() const {
-            return ready;
+        constexpr bool ready() const {
+            return m_ready;
         }
 
         /**
          * Rewinds the parser to the beginning of the last given JSON data.
          */
         constexpr void rewind() {
-            index = 0;
-            ready = true;
+            m_index = 0;
+            m_ready = true;
         }
 
         /**
          * Attempts to read the next data object within the JSON data.
          * @return The next object, or nothing on error
          */
-        constexpr std::optional<object> getNextObject() {
-            if (!ready)
+        constexpr std::optional<object> next() {
+            if (!m_ready)
                 return {};
 
             // Search for the name field (key of the key-value pair)
-            if (auto nameStart = body.find('\"', index); nameStart != npos) {
-                if (auto nameEnd = body.find('\"', nameStart + 1);
+            if (auto nameStart = m_body.find('\"', m_index); nameStart != npos) {
+                if (auto nameEnd = m_body.find('\"', nameStart + 1);
                     nameEnd != npos && nameEnd > nameStart)
                 {
                     // Name found; next, find the value
-                    if (auto valueStart = body.find(':', nameEnd + 1);
+                    if (auto valueStart = m_body.find(':', nameEnd + 1);
                         valueStart != npos)
                     {
                         // Construct the object
-                        object o;
-                        o.name = body.substr(nameStart + 1, nameEnd - nameStart - 1);
-                        auto pair = determineType(body.substr(valueStart + 1));
+                        auto pair = determineType(m_body.substr(valueStart + 1));
                         if (!pair)
                             return {};
-                        o.type = pair->first;
-                        o.value = body.substr(valueStart + 2,
-                                              pair->second - 1);
+                        object o {
+                            m_body.substr(nameStart + 1, nameEnd - nameStart - 1),
+                            pair->first,
+                            m_body.substr(valueStart + 2, pair->second - 1)
+                        };
 
                         // Advance index to next object, or ready = false if
                         // this is the end.
-                        index = body.find_first_not_of(" \t\n\r", valueStart + 1 + pair->second);
-                        if (index == npos || body[index] != ',')
-                            ready = false;
+                        m_index = m_body.find_first_not_of(" \t\n\r", valueStart + 1 + pair->second);
+                        if (m_index == npos || m_body[m_index] != ',')
+                            m_ready = false;
 
                         return o;
                     }

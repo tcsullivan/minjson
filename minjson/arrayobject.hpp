@@ -26,33 +26,33 @@ namespace minjson
     /**
      * Acts as an iterator for entries in an object's contained array.
      */
-    struct arrayobject : public objectbase
+    class arrayobject : public objectbase
     {
     private:
         constexpr static auto npos = std::string_view::npos;
 
-    public:
-        std::string_view whole;
-        std::size_t index;
-        bool valid;
+        std::string_view m_whole;
+        std::size_t m_index;
+        bool m_valid;
 
-        constexpr arrayobject(std::string_view _whole)
-            : whole(_whole), index(0), valid(false)
+    public:
+        constexpr arrayobject(std::string_view whole)
+            : m_whole(whole), m_index(0), m_valid(false)
         {
             // Load the first entry
-            nextObject();
+            next();
         }
 
-        constexpr bool isValid() const {
-            return valid;
+        constexpr bool valid() const {
+            return m_valid;
         }
 
         constexpr void rewind() {
-            index = 0;
-            nextObject();
+            m_index = 0;
+            next();
         }
 
-        constexpr arrayobject& nextObject();
+        constexpr arrayobject& next();
     };
 }
 
@@ -60,22 +60,22 @@ namespace minjson
 
 namespace minjson
 {
-    constexpr arrayobject& arrayobject::nextObject()
+    constexpr arrayobject& arrayobject::next()
     {
-        if (index == npos) {
-            valid = false;
-        } else if (auto pair = parser::determineType(whole.substr(index)); pair) {
+        if (m_index == npos) {
+            m_valid = false;
+        } else if (auto pair = parser::determineType(m_whole.substr(m_index)); pair) {
             // Found next entry in array; become it
             std::size_t next;
-            std::tie(type, next) = *pair;
-            value = whole.substr(index, next);
-            index = whole.find_first_not_of(" \t\n\r", index + next + 1);
+            std::tie(m_type, next) = *pair;
+            m_value = m_whole.substr(m_index, next);
+            m_index = m_whole.find_first_not_of(" \t\n\r", m_index + next + 1);
 
-            if (index != npos && whole[index] == ']')
-                index = npos;
-            valid = true;
+            if (m_index != npos && m_whole[m_index] == ']')
+                m_index = npos;
+            m_valid = true;
         } else {
-            valid = false;
+            m_valid = false;
         }
 
         return *this;

@@ -38,8 +38,8 @@ void iterateParser(json::parser test);
 
 void iterateArray(json::objectbase array)
 {
-    for (auto iter = *array.getArrayFirst(); iter.isValid(); iter.nextObject()) {
-        switch (iter.type) {
+    for (auto iter = *array.getArrayFirst(); iter.valid(); iter.next()) {
+        switch (iter.type()) {
         case json::type::string:
             std::cout << "string: " << *iter.get<std::string_view>() << std::endl;
             break;
@@ -57,8 +57,8 @@ void iterateArray(json::objectbase array)
             std::cout << "array: " << std::endl;
             iterateArray(iter);
             break;
-        default:
-            std::cout << "unknown: " << iter.value << std::endl;
+        case json::type::null:
+            std::cout << "null." << std::endl;
             break;
         }
     }
@@ -66,30 +66,30 @@ void iterateArray(json::objectbase array)
 
 void iterateParser(json::parser test)
 {
-    while (test.isReady()) {
-        auto object = test.getNextObject();
+    while (test.ready()) {
+        auto object = test.next();
         if (!object)
             break;
-        switch (object->type) {
+        switch (object->type()) {
         case json::type::string:
-            std::cout << object->name << ": " << *object->get<std::string_view>() << std::endl;
+            std::cout << object->name() << ": " << *object->get<std::string_view>() << std::endl;
             break;
         case json::type::number:
-            std::cout << object->name << ": " << *object->get<double>() << std::endl;
+            std::cout << object->name() << ": " << *object->get<double>() << std::endl;
             break;
         case json::type::boolean:
-            std::cout << object->name << ": " << (*object->get<bool>() ? "true" : "false") << std::endl;
+            std::cout << object->name() << ": " << (*object->get<bool>() ? "true" : "false") << std::endl;
             break;
         case json::type::object:
-            std::cout << object->name << ": " << std::endl;
+            std::cout << object->name() << ": " << std::endl;
             iterateParser(*object->getObject());
             break;
         case json::type::array:
-            std::cout << object->name << ": " << std::endl;
+            std::cout << object->name() << ": " << std::endl;
             iterateArray(*object);
             break;
-        default:
-            std::cout << object->name << "? " << object->value << std::endl;
+        case json::type::null:
+            std::cout << object->name() << ": null" << std::endl;
             break;
         }
     }

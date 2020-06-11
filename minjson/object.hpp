@@ -27,9 +27,20 @@ namespace minjson
      * Structure to represent a JSON object, simply adds a 'name' field to
      * complete the name-value pair structure used by JSON.
      */
-    struct object : public objectbase
+    class object : public objectbase
     {
-        std::string_view name;
+    private:
+        std::string_view m_name;
+
+    public:
+        constexpr object(std::string_view name = {},
+                         minjson::type type = minjson::type::null,
+                         std::string_view value = {}) :
+            objectbase(type, value), m_name(name) {}
+
+        constexpr std::string_view name() const {
+            return m_name;
+        }
     };
 }
 
